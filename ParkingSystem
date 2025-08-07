@@ -1,0 +1,158 @@
+import java.io.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Scanner;
+
+// private class
+class ParkingInfo {
+    private String carOwnerName;
+    private String carNumber;
+    private String parkingAddress;
+    private String parkingArea;
+    private LocalTime parkingTime;
+    private LocalDate parkingDate;
+    private String parkingOwner;
+    private double parkingFees;
+
+    // constructur for parking info public class
+    public ParkingInfo(String carOwnerName, String carNumber, String parkingAddress, String parkingArea,
+                       LocalTime parkingTime, LocalDate parkingDate, String parkingOwner, double parkingFees) {
+        this.carOwnerName = carOwnerName;
+        this.carNumber = carNumber;
+        this.parkingAddress = parkingAddress;
+        this.parkingArea = parkingArea;
+        this.parkingTime = parkingTime;
+        this.parkingDate = parkingDate;
+        this.parkingOwner = parkingOwner;
+        this.parkingFees = parkingFees;
+    }
+
+    // Save record to file
+    public void saveToFile(String filename) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
+            writer.write(carOwnerName + "," + carNumber + "," + parkingAddress + "," + parkingArea + "," +
+                         parkingTime + "," + parkingDate + "," + parkingOwner + "," + parkingFees);
+            writer.newLine();
+        } catch (IOException e) {
+            System.out.println("❌ Error writing to file: " + e.getMessage());
+        }
+    }
+
+    // Display info
+    public void displayInfo() {
+        System.out.println("\n----- Parking Details -----");
+        System.out.println("Car Owner Name : " + carOwnerName);
+        System.out.println("Car Number     : " + carNumber);
+        System.out.println("Parking Address: " + parkingAddress);
+        System.out.println("Parking Area   : " + parkingArea);
+        System.out.println("Parking Time   : " + parkingTime);
+        System.out.println("Parking Date   : " + parkingDate);
+        System.out.println("Parking Owner  : " + parkingOwner);
+        System.out.println("Parking Fees   : $" + parkingFees);
+        System.out.println("---------------------------\n");
+    }
+
+    // Factory method to create from a line in the file
+    public static ParkingInfo fromCSV(String line) {
+        String[] parts = line.split(",");
+        if (parts.length != 8) return null;
+        return new ParkingInfo(
+                parts[0], // owner
+                parts[1], // car number
+                parts[2], // address
+                parts[3], // area
+                LocalTime.parse(parts[4]),
+                LocalDate.parse(parts[5]),
+                parts[6], // parking owner
+                Double.parseDouble(parts[7])
+        );
+    }
+
+    public String getCarNumber() {
+        return carNumber;
+    }
+}
+
+public class ParkingSystem {
+    private static final String FILENAME = "parking_records.txt";
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("===== Car Parking System =====");
+            System.out.println("1. Add Parking Record");
+            System.out.println("2. Search by Car Number");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+            int option = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (option) {
+                case 1:
+                    // Add parking record
+                    System.out.print("Enter Car Owner Name: ");
+                    String ownerName = scanner.nextLine();
+
+                    System.out.print("Enter Car Number: ");
+                    String carNumber = scanner.nextLine();
+
+                    System.out.print("Enter Parking Address: ");
+                    String address = scanner.nextLine();
+
+                    System.out.print("Enter Parking Area (e.g., A1, B2): ");
+                    String area = scanner.nextLine();
+
+                    System.out.print("Enter Parking Owner Name: ");
+                    String parkingOwner = scanner.nextLine();
+
+                    System.out.print("Enter Parking Fees: ");
+                    double fees = scanner.nextDouble();
+                    scanner.nextLine(); // consume newline
+
+                    LocalDate date = LocalDate.now();
+                    LocalTime time = LocalTime.now();
+
+                    ParkingInfo info = new ParkingInfo(ownerName, carNumber, address, area, time, date, parkingOwner, fees);
+                    info.saveToFile(FILENAME);
+
+                    System.out.println("✅ Parking record saved to file!\n");
+                    break;
+
+                case 2:
+                    // Search by car number
+                    System.out.print("Enter Car Number to Search: ");
+                    String searchCarNumber = scanner.nextLine();
+
+                    boolean found = false;
+
+                    try (BufferedReader reader = new BufferedReader(new FileReader(FILENAME))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            ParkingInfo record = ParkingInfo.fromCSV(line);
+                            if (record != null && record.getCarNumber().equalsIgnoreCase(searchCarNumber)) {
+                                record.displayInfo();
+                                found = true;
+                                break;
+                            }
+                        }
+                    } catch (IOException e) {
+                        System.out.println("❌ Error reading file: " + e.getMessage());
+                    }
+
+                    if (!found) {
+                        System.out.println("❌ No record found for car number: " + searchCarNumber + "\n");
+                    }
+                    break;
+
+                case 3:
+                    System.out.println("👋 Exiting... Goodbye!");
+                    scanner.close();
+                    return;
+
+                default:
+                    System.out.println("Invalid option. Try again.\n");
+            }
+        }
+    }
+}
